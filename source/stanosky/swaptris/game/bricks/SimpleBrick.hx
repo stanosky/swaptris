@@ -37,7 +37,7 @@ class SimpleBrick extends FlxSprite implements IBrick
 	public function setGroup(id:Int):Void {
 		_group = id;
 		_tempGroup = -1;
-		makeGraphic(_size, _size, FlxColor.YELLOW);
+		//makeGraphic(_size, _size, FlxColor.YELLOW);
 	}
 	
 	public function getGroup():Int {

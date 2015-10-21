@@ -9,5 +9,5 @@ enum BrickType
 	Green;
 	Blue;
 	Yellow;
-	Gray;
+	White;
 }

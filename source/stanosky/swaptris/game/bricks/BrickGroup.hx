@@ -25,6 +25,14 @@ class BrickGroup
 		}
 	}
 	
+	public function getId():Int {
+		return _id;
+	}
+	
+	public function getBricks():Array<IBrick> {
+		return _members;
+	}
+	
 	public function destroy():Void {
 		var brick:IBrick;
 		for (i in 0..._members.length) {

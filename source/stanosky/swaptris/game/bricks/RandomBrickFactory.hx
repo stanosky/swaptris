@@ -32,15 +32,15 @@ class RandomBrickFactory extends AbstractBrickFactory
 		switch (type) 
 		{
 			case BrickType.Blue:
-				brick = new SimpleBrick(_brickSize, FlxColor.BLUE);
+				brick = new BrickBlue(_brickSize);
 			case BrickType.Green:
-				brick = new SimpleBrick(_brickSize, FlxColor.GREEN);
+				brick = new BrickGreen(_brickSize);
 			case BrickType.Red:
-				brick = new SimpleBrick(_brickSize, FlxColor.RED);
+				brick = new BrickRed(_brickSize);
+			case BrickType.White:
+				brick = new BrickWhite(_brickSize);				
 			case BrickType.Yellow:
-				brick = new SimpleBrick(_brickSize, FlxColor.YELLOW);				
-			case BrickType.Gray:
-				brick = new SimpleBrick(_brickSize, FlxColor.GRAY);				
+				brick = new BrickYellow(_brickSize);				
 			default:
 				brick = null;
 		}

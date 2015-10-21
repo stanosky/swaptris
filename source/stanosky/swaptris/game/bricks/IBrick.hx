@@ -8,8 +8,6 @@ interface IBrick
 	public function moveBrickTo(X:Float = 0, Y:Float = 0):Void;
 	public function destroy():Void;
 	public function toString():String;
-	//public function setConnected(connection:Connection, value:Bool):Void;
-	//public function getConnectionsLen():Int;
 	public function setGroup(id:Int):Void;
 	public function getGroup():Int;
 	public function setTempGroup(id:Int):Void;	

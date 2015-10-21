@@ -18,7 +18,9 @@ class PatternBrickFactory extends AbstractBrickFactory
 		_pattern = pattern;
 	}
 	
-	override public function getBrick(column:Int,row:Int):IBrick {
+	override public function getBrick(column:Int, row:Int):IBrick {
+		if (row >= _pattern.length) return null;
+		if (column >= _pattern[row].length) return null;
 		var value:Int = _pattern[row][column];
 		var brick:IBrick;
 		switch (value) 

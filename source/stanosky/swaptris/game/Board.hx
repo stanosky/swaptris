@@ -1,6 +1,8 @@
 package stanosky.swaptris.game;
 //import cpp.Void;
-import stanosky.swaptris.game.anim.AnimManager;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
+//import stanosky.swaptris.game.anim.AnimManager;
 import stanosky.swaptris.game.bricks.BrickGroup;
 import stanosky.swaptris.game.bricks.IBrick;
 import stanosky.swaptris.game.bricks.IBrickFactory;
@@ -20,6 +22,8 @@ class Board
 	
 	private var _grid:Grid;
 	private var _brickSize:Int;
+	private var _x:Int;
+	private var _y:Int;
 	private var _rows:Int;
 	private var _columns:Int;
 	private var _allRows:Int;
@@ -27,12 +31,17 @@ class Board
 	private var _mainStartRowIndex:Int;
 	private var _factory:IBrickFactory;
 	private var _drawArea:FlxSpriteGroup;
-
+	private var _groups:Array<BrickGroup>;
+	private var _toDestroy:Array<IBrick>;
+	private var _moveAnimNum:Int = 0;
+	private var _removeAnimNum:Int = 0;
+	//private var _animManager:AnimManager;
 	
-	
-	public function new(columns:Int, rows:Int, brickSize:Int, drawArea:FlxSpriteGroup) {
+	public function new(x:Int,y:Int,columns:Int, rows:Int, brickSize:Int, drawArea:FlxSpriteGroup) {
 		if (columns < 1) throw new RangeError("Ilość kolumn musi być wieksza od zera!");
 		if (rows < 1) throw new RangeError("Ilość wierszy musi być wieksza od zera!");
+		_x = x;
+		_y = y;
 		_rows = rows;
 		_allRows = _rows * 2;
 		_columns = columns;
@@ -40,6 +49,8 @@ class Board
 		_mainStartRowIndex = _allRows - _rows;
 		_drawArea = drawArea;
 		_brickSize = brickSize;
+		_toDestroy = [];
+		//_animManager = new AnimManager();
 		_grid = new Grid(_columns, _allRows);
 	}
 	
@@ -105,19 +116,28 @@ class Board
 				var brick2:IBrick = _grid.pickBrick(brick2Col, brick2Row /*+ _mainStartRowIndex*/);
 				_grid.addBrick(brick2, brick1Col, brick1Row /*+ _mainStartRowIndex*/);
 				_grid.addBrick(brick1, brick2Col, brick2Row /*+ _mainStartRowIndex*/);
-				//brick1.moveBrickTo(brick2Col * _brickSize, (brick2Row /*+ _mainStartRowIndex*/) * _brickSize);
-				//brick2.moveBrickTo(brick1Col * _brickSize, (brick1Row /*+ _mainStartRowIndex*/) * _brickSize);
-				AnimManager.moveAnimation(brick1, brick2Col * _brickSize, (brick2Row /*+ _mainStartRowIndex*/) * _brickSize);
-				AnimManager.moveAnimation(brick2, brick1Col * _brickSize, (brick1Row /*+ _mainStartRowIndex*/) * _brickSize);
+				createMoveAnimaton(brick1, _x + brick2Col * _brickSize, _y + (brick2Row /*+ _mainStartRowIndex*/) * _brickSize);
+				createMoveAnimaton(brick2, _x + brick1Col * _brickSize, _y + (brick1Row /*+ _mainStartRowIndex*/) * _brickSize);
 			}
 		}
 	}
 	
+	private function createMoveAnimaton(brick:IBrick, x:Float, y:Float):Void {
+		_moveAnimNum++;
+		FlxTween.tween(brick, { x:x, y:y }, .2, {ease:FlxEase.quadInOut , complete:onMoveAnimComplete} );
+	}
+	
+	private function onMoveAnimComplete(tween:FlxTween) {
+		if (--_moveAnimNum == 0) {
+			trace("koniec animacji ruchu");
+		}
+	}
+	
 	public function findBrickGroups():Void {
-		var groups:Array<BrickGroup> = [];
 		var group:BrickGroup;
 		var tempIndex:Int = 0;
 		var brick:IBrick;
+		_groups = [];
 		for (r in 0..._allRows) {
 			for (c in 0..._columns) {
 				brick = _grid.getBrick(c, r);
@@ -126,15 +146,15 @@ class Board
 					if (brick.getGroup() == -1) {
 						//nadajemy kostce tymczasowy index grupy
 						brick.setTempGroup(tempIndex);
-						trace("brick", brick);
+						//trace("brick", brick);
 						group = tryFindGroupForBrick(brick);
-						if (group != null) groups.push(group);
+						if (group != null) _groups.push(group);
 						tempIndex++;
 					}
 				}
 			}
 		}
-		trace("created groups:", groups.length);
+		//trace("created groups:", groups.length);
 	}
 	
 	private function tryFindGroupForBrick(brick:IBrick):BrickGroup {
@@ -152,7 +172,7 @@ class Board
 		while (currentNeighbour < neighbours.length && output.length < 4) {
 			nBrick = neighbours[currentNeighbour];
 			if (nBrick.getGroup() == -1	&& brick.getColor() == nBrick.getColor() && nBrick.getTempGroup() == -1) {
-				trace(currentNeighbour, nBrick);
+				//trace(currentNeighbour, nBrick);
 				nBrick.setTempGroup(brick.getTempGroup());
 				findNextSameTypeNeighbour(nBrick,output);
 			}
@@ -160,13 +180,17 @@ class Board
 		}
 	}
 	
-	private function getBrickNeighbours(brick:IBrick):Array<IBrick> {
-		var output:Array<IBrick> = [];
+	private function getBrickNeighbours(brick:IBrick,all:Bool = false):Array<IBrick> {
 		var col:Int = brick.getCol();
 		var row:Int = brick.getRow();
+		return getCellNeighbours(col,row,all);
+	}
+	
+	private function getCellNeighbours(col:Int, row:Int,all:Bool = false):Array<IBrick> {
+		var output:Array<IBrick> = [];
 		if (_grid.cellExists(col, row) && _grid.isCellOccupied(col, row)) {
-			//ta linia jest raczej niepotrzebna, bo bdziemy raczej przeszukiwać tylko w dół
-			//if (_grid.isCellOccupied(col, row - 1)) output.push(_grid.getBrick(col, row - 1));
+			//pierwsza kostka jest zwracana jedynie jeśli chcemy znać wszystkich sąsiadów, do innych zastosowań wystarczą pozostałe 3
+			if (_grid.isCellOccupied(col, row - 1) && all) output.push(_grid.getBrick(col, row - 1));
 			if (_grid.isCellOccupied(col - 1, row)) output.push(_grid.getBrick(col - 1, row));			
 			if (_grid.isCellOccupied(col + 1, row)) output.push(_grid.getBrick(col + 1, row));
 			if (_grid.isCellOccupied(col, row + 1)) output.push(_grid.getBrick(col, row + 1));
@@ -175,6 +199,54 @@ class Board
 		return output;
 	}
 	
-
+	public function tryDestroyGroupAt(col:Int, row:Int):Void {
+		if (_grid.isCellOccupied(col, row)) {
+			var brick:IBrick = _grid.getBrick(col, row);
+			var brickGroup:Int = brick.getGroup();
+			if (brickGroup >= 0) {
+				var groupIndex:Int = findGroupIndexById(brickGroup);
+				if (groupIndex > -1) {
+					var group:BrickGroup = _groups.splice(groupIndex, 1)[0];
+					var bricks:Array<IBrick> = group.getBricks();
+					for (i in 0...bricks.length) {
+						brick = bricks[i];
+						destroyBrick(brick);
+					}
+					group.destroy();
+				}
+			}
+		} else {
+			trace("kostka jest pusta albo nie jest w grupie");
+		}
+	}
 	
+	private function findGroupIndexById(groupId:Int):Int {
+		for (i in 0..._groups.length) {
+			if (_groups[i].getId() == groupId) return i;
+		}
+		return -1;
+	}
+	
+	private function destroyBrick(brick:IBrick):Void {
+		var col:Int = brick.getCol();
+		var row:Int = brick.getRow();
+		_removeAnimNum++;
+		_toDestroy.push(brick);
+		FlxTween.tween(brick, { alpha:0 }, .2, {ease:FlxEase.quadInOut , complete:onRemoveAnimComplete} );
+	}
+	
+	function onRemoveAnimComplete(tween:FlxTween) {
+		if (--_removeAnimNum == 0) {
+			var brick:IBrick;
+			var col:Int;
+			var row:Int;
+			for (i in 0..._toDestroy.length) {
+				brick = _toDestroy.pop();
+				col = brick.getCol();
+				row = brick.getRow();
+				_grid.removeBrick(col, row);
+			}
+		}
+		trace("_toDestroy.length", _toDestroy.length);
+	}
 }
