@@ -14,7 +14,7 @@
 	<!--------------------------------WINDOW SETTINGS------------------------------->
 	
 	<!--These window settings apply to all targets-->
-	<window width="300" height="600" fps="60" background="#000000" hardware="true" vsync="true" />
+	<window width="480" height="800" fps="60" background="#000000" hardware="true" vsync="true" />
 	
 	<!--Web-specific-->
 	<window if="web" orientation="portrait"  />
@@ -34,6 +34,8 @@
 	<assets path="assets/music" include="*.mp3" if="flash" />
 	<assets path="assets/music" include="*.ogg" unless="flash" /-->
 	<assets path="assets/sounds/swap.wav" />
+	<assets path="assets/images" include="*.png" />
+	
 		
 	<!--------------------------------LIBRARIES------------------------------------->
 
