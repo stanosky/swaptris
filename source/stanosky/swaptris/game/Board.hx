@@ -17,7 +17,7 @@ import stanosky.swaptris.game.Grid;
  * @author Krzysztof Stano
  */
  
-class Board
+class Board 
 {
 	
 	private var _grid:Grid;
@@ -35,7 +35,7 @@ class Board
 	private var _toDestroy:Array<IBrick>;
 	private var _moveAnimNum:Int = 0;
 	private var _removeAnimNum:Int = 0;
-	//private var _animManager:AnimManager;
+	private var _isReady:Bool = false;
 	
 	public function new(x:Int,y:Int,columns:Int, rows:Int, brickSize:Int, drawArea:FlxSpriteGroup) {
 		if (columns < 1) throw new RangeError("Ilość kolumn musi być wieksza od zera!");
@@ -52,6 +52,7 @@ class Board
 		_toDestroy = [];
 		//_animManager = new AnimManager();
 		_grid = new Grid(_columns, _allRows);
+		
 	}
 	
 	public function clearTempGrid() {

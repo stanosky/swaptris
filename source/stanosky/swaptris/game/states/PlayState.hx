@@ -14,6 +14,11 @@ import stanosky.swaptris.game.bricks.IBrickFactory;
 import stanosky.swaptris.game.bricks.Pattern;
 import stanosky.swaptris.game.bricks.PatternBrickFactory;
 import stanosky.swaptris.game.bricks.RandomBrickFactory;
+import stanosky.swaptris.game.engine.ILoop;
+import stanosky.swaptris.game.engine.LoopIdle;
+import stanosky.swaptris.game.engine.LoopInput;
+import stanosky.swaptris.game.engine.LoopWait;
+import stanosky.swaptris.game.GameEvent;
 
 import flixel.input.mouse.FlxMouse;
 
@@ -37,16 +42,22 @@ class PlayState extends FlxState
 	private var _patternFactory:IBrickFactory;
 	private var _boardHolder:FlxSpriteGroup;
 	private var _background:FlxSprite;
-
-	private var _mousePressX:Int;
-	private var _mousePressY:Int;
-	private var _validPress:Bool = false;
-	private var _swapSound:FlxSound;
+	//private var _mousePressX:Int;
+	//private var _mousePressY:Int;
+	//private var _validPress:Bool = false;
+	//private var _swapSound:FlxSound;
+	
+	//loop states
+	private var _loop:ILoop;
+	private var _loopIdle:ILoop;
+	private var _loopInput:ILoop;
+	private var _loopWait:ILoop;
+	
 	
 	//double click stuff
-	private var _lastClick:Float=0;
-    private var _doubleClickFired:Bool = false;
-    private static inline var DOUBLE_CLICK_TIMER = 0.2; //seconds to determine a double click/tap
+	//private var _lastClick:Float=0;
+	//private var _doubleClickFired:Bool = false;
+    //private static inline var DOUBLE_CLICK_TIMER = 0.2; //seconds to determine a double click/tap
 	
 	/**
 	 * Function that is called up when to state is created to set it up. 
@@ -54,10 +65,12 @@ class PlayState extends FlxState
 	override public function create():Void
 	{
 		_background = new FlxSprite(0, 0, AssetPaths.playView__png);
-		_swapSound = FlxG.sound.load(AssetPaths.swap__wav);
+		//_swapSound = FlxG.sound.load(AssetPaths.swap__wav);
 		_boardHolder = new FlxSpriteGroup();
 		_boardWidth = _brickSize * _boardColumns;
 		_boardHeight = _brickSize * _boardRows;
+		GameDispatcher.addEventListener(GameEvent.BOARD_READY, onBoardReady);
+		GameDispatcher.addEventListener(GameEvent.BOARD_BUSY, onBoardBusy);
 		_board = new Board(_boardX,_boardY, _boardColumns, _boardRows, _brickSize, _boardHolder);
 		_randomFactory = new RandomBrickFactory(_brickSize);
 		_patternFactory = new PatternBrickFactory(_brickSize);
@@ -73,9 +86,21 @@ class PlayState extends FlxState
 		add(_boardHolder);
 		
 		_board.findBrickGroups();
-		FlxG.stage.doubleClickEnabled = true;
+		//FlxG.stage.doubleClickEnabled = true;
+		_loopIdle = new LoopIdle();
+		_loopInput = new LoopInput(_board, _boardX, _boardY, _boardWidth, _boardHeight, _brickSize);
+		_loopWait = new LoopWait();
+		_loop = _loopInput;
 		super.create();
 	}
+	
+	private function onBoardReady(event:GameEvent):Void {
+		_loop = _loopInput;
+	}
+	
+	private function onBoardBusy(event:GameEvent):Void {
+		_loop = _loopWait;
+	}	
 	
 	/**
 	 * Function that is called when this state is destroyed - you might want to 
@@ -91,13 +116,17 @@ class PlayState extends FlxState
 	 */
 	override public function update():Void
 	{
-		//_board.fillMainGrid();		
-		if (FlxG.mouse.justPressed) onMousePress();
-		if (FlxG.mouse.justReleased) onMouseRelease();
+		//if(_board.isReady()) {
+			//if (FlxG.mouse.justPressed) onMousePress();
+			//if (FlxG.mouse.justReleased) onMouseRelease();
+		//}
+		_loop.update();
 		super.update();
 	}	
 	
-	private function onMouseRelease() {
+	
+	
+	/*private function onMouseRelease() {
 		if(_validPress) {
 			var mouseX:Int = Math.round(FlxG.mouse.screenX - _boardX);
 			var mouseY:Int = Math.round(FlxG.mouse.screenY - _boardY);
@@ -167,6 +196,6 @@ class PlayState extends FlxState
 			var rowIndex:Int = Math.floor(_mousePressY / _brickSize);
 			_board.tryDestroyGroupAt(colIndex, rowIndex);
 		}
-    }	
+    }*/	
 	
 }
