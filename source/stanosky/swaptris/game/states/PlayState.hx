@@ -42,10 +42,6 @@ class PlayState extends FlxState
 	private var _patternFactory:IBrickFactory;
 	private var _boardHolder:FlxSpriteGroup;
 	private var _background:FlxSprite;
-	//private var _mousePressX:Int;
-	//private var _mousePressY:Int;
-	//private var _validPress:Bool = false;
-	//private var _swapSound:FlxSound;
 	
 	//loop states
 	private var _loop:ILoop;
@@ -53,12 +49,7 @@ class PlayState extends FlxState
 	private var _loopInput:ILoop;
 	private var _loopWait:ILoop;
 	
-	
-	//double click stuff
-	//private var _lastClick:Float=0;
-	//private var _doubleClickFired:Bool = false;
-    //private static inline var DOUBLE_CLICK_TIMER = 0.2; //seconds to determine a double click/tap
-	
+
 	/**
 	 * Function that is called up when to state is created to set it up. 
 	 */
@@ -86,7 +77,6 @@ class PlayState extends FlxState
 		add(_boardHolder);
 		
 		_board.findBrickGroups();
-		//FlxG.stage.doubleClickEnabled = true;
 		_loopIdle = new LoopIdle();
 		_loopInput = new LoopInput(_board, _boardX, _boardY, _boardWidth, _boardHeight, _brickSize);
 		_loopWait = new LoopWait();
@@ -116,86 +106,8 @@ class PlayState extends FlxState
 	 */
 	override public function update():Void
 	{
-		//if(_board.isReady()) {
-			//if (FlxG.mouse.justPressed) onMousePress();
-			//if (FlxG.mouse.justReleased) onMouseRelease();
-		//}
 		_loop.update();
 		super.update();
 	}	
-	
-	
-	
-	/*private function onMouseRelease() {
-		if(_validPress) {
-			var mouseX:Int = Math.round(FlxG.mouse.screenX - _boardX);
-			var mouseY:Int = Math.round(FlxG.mouse.screenY - _boardY);
-			var colIndex:Int = Math.floor(_mousePressX / _brickSize);
-			var rowIndex:Int = Math.floor(_mousePressY / _brickSize);			
-			var diffX:Int  = mouseX - _mousePressX;
-			var diffY:Int  = mouseY - _mousePressY;
-			var brick1:IBrick;
-			var brick2:IBrick;
-			//trace(boardIndex.toString());
-			if (Math.abs(diffX) > Math.abs(diffY)) {
-				if (diffX > 0) {
-					_board.swapBricks(colIndex, rowIndex, colIndex + 1, rowIndex);
-				} else {
-					_board.swapBricks(colIndex, rowIndex, colIndex - 1, rowIndex);
-				}
-				_swapSound.play();
-			} else if (Math.abs(diffX) < Math.abs(diffY)) {
-				if (diffY > 0) {
-					_board.swapBricks(colIndex, rowIndex, colIndex, rowIndex + 1);
-				} else {
-					_board.swapBricks(colIndex, rowIndex, colIndex, rowIndex - 1);
-				}
-				_swapSound.play();
-			}
-			
-		}
-	}
-	
-	private function onMousePress():Void {
-        if (haxe.Timer.stamp()-_lastClick<DOUBLE_CLICK_TIMER) { //a double click is 2 clicks within 0.3sec
-            _lastClick = 0;
-            onDoubleClick();
-        } else {
-            _doubleClickFired = false;
-            _lastClick = haxe.Timer.stamp();
-			FlxTween.num(0, DOUBLE_CLICK_TIMER + 0.01, DOUBLE_CLICK_TIMER + 0.01, {complete: onSingleClick, type: FlxTween.ONESHOT });
-			//FlxTween.tween(this, { }, DOUBLE_CLICK_TIMER + 0.01, { complete:onSingleClick } );
-            //Actuate.timer(DOUBLE_CLICK_TIMER+0.01).onComplete(onSingleClick,[event]);
-        }			
-		var mouseX:Int = Math.round(FlxG.mouse.screenX - _boardX);
-		var mouseY:Int = Math.round(FlxG.mouse.screenY - _boardY);
-		//trace(mouseX, mouseY);
-		if (mouseX >= 0 && mouseX <= _boardWidth && mouseY >= 0 && mouseY <= _boardHeight) {
-			_validPress = true;
-			_mousePressX = mouseX;
-			_mousePressY = mouseY;
-		} else {
-			_validPress = false;
-		}
-	}
-	
-    function onSingleClick(tween:FlxTween):Void {
-        if (_doubleClickFired) return;
-        // STUFF to do on single click/tap
-        trace('single click');
-    }
-
-    function onDoubleClick():Void {
-        _doubleClickFired = true;
-        // STUFF on double click/tap
-        //trace('double click');
-		if (_validPress) {
-			var mouseX:Int = Math.round(FlxG.mouse.screenX - _boardX);
-			var mouseY:Int = Math.round(FlxG.mouse.screenY - _boardY);
-			var colIndex:Int = Math.floor(_mousePressX / _brickSize);
-			var rowIndex:Int = Math.floor(_mousePressY / _brickSize);
-			_board.tryDestroyGroupAt(colIndex, rowIndex);
-		}
-    }*/	
 	
 }

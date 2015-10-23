@@ -6,7 +6,7 @@ import openfl.events.IEventDispatcher;
 
 /**
  * ...
- * @author ...
+ * @author Krzysztof Stano
  */
 class GameDispatcher 
 {
@@ -19,18 +19,12 @@ class GameDispatcher
 	}
 	
 	public static function removeEventListener(type:String, listener:Dynamic->Void, useCapture:Bool = false):Void {
-		if (disp == null) { return; }
+		if (disp == null) { disp = new EventDispatcher(); }
 		disp.removeEventListener(type, listener, useCapture);
 	}
 	
 	public static function dispatchEvent (event:Event):Bool {
-		if (disp == null) { return false; }
+		if (disp == null) { disp = new EventDispatcher(); }
 		return disp.dispatchEvent(event);
 	}		
 }
-
-	//public function addEventListener (type:String, listener:Dynamic->Void, useCapture:Bool = false, priority:Int = 0, useWeakReference:Bool = false):Void;
-	//public function dispatchEvent (event:Event):Bool;
-	//public function hasEventListener (type:String):Bool;
-	//public function removeEventListener (type:String, listener:Dynamic->Void, useCapture:Bool = false):Void;
-	//public function willTrigger (type:String):Bool;
