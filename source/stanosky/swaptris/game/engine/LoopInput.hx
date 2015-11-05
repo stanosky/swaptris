@@ -75,7 +75,12 @@ class LoopInput implements ILoop
         }			
 		var mouseX:Int = Math.round(FlxG.mouse.screenX - _boardX);
 		var mouseY:Int = Math.round(FlxG.mouse.screenY - _boardY);
-		if (mouseX >= 0 && mouseX <= _boardWidth && mouseY >= 0 && mouseY <= _boardHeight) {
+		
+		if (mouseX >= 0 && mouseX <= _boardWidth
+		//Ta cześć warunku może wydawać sie dziwna ze wzgledu na to, że mouseY musi być wieksze lub równe _boardHeight
+		//oraz nie może być wieksze od podwojonego _boardHeight. Wynika to z tego, że Plansz jest podzielona na cześć
+		//niewidoczną i cześć widoczną. Cześć niewidoczna znajduje si ponad cześcią widoczną.
+		&& mouseY >= _boardHeight && mouseY <= _boardHeight*2) {
 			_validPress = true;
 			_mousePressX = mouseX;
 			_mousePressY = mouseY;

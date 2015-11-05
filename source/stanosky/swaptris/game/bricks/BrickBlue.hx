@@ -20,4 +20,9 @@ class BrickBlue extends SimpleBrick
 		setGraphicSize(_size, _size);
 		updateHitbox();
 	}
+	
+	//override public function setGroup(id:Int):Void {
+		//super.setGroup(id);
+		//
+	//}
 }

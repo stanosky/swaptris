@@ -35,7 +35,7 @@ class PlayState extends FlxState
 	private var _boardX:Int = 20;
 	private var _boardY:Int = 64;
 	private var _boardColumns:Int = 10;
-	private var _boardRows:Int = 12;
+	private var _boardRows:Int = 6;
 	private var _boardWidth:Int;
 	private var _boardHeight:Int;
 	private var _randomFactory:IBrickFactory;
@@ -69,8 +69,8 @@ class PlayState extends FlxState
 		//_board.setBrickFactory(_patternFactory);
 		_board.setBrickFactory(_randomFactory);
 		_board.fillTempGrid();
-		//_board.setBrickFactory(_randomFactory);
-		//_board.fillMainGrid();
+		_board.setBrickFactory(_randomFactory);
+		_board.fillMainGrid();
 		_boardHolder.x = _boardX;// (FlxG.width - _boardHolder.width) * .5;
 		_boardHolder.y = _boardY;// (FlxG.height - _boardHolder.height) * .5;		
 		add(_background);

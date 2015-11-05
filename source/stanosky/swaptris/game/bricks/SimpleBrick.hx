@@ -1,5 +1,6 @@
 package stanosky.swaptris.game.bricks;
 import flixel.util.FlxStringUtil;
+import openfl.display.BlendMode;
 import stanosky.swaptris.game.bricks.IBrick;
 import flixel.FlxSprite;
 import flixel.util.FlxColor;
@@ -17,16 +18,26 @@ class SimpleBrick extends FlxSprite implements IBrick
 	private var _sides:Int = 4;
 	private var _column:Int = -1;
 	private var _row:Int = -1;
+	private var ANIM_IDLE:String = "idle";
+	private var ANIM_SELECTED:String = "selected";
 	
 	public function new(size:Int, color:Int) {
 		super(0, 0);
 		_size = size;
 		_color = color;
+		useColorTransform = true;
 		initBrick();
 	}
 	
 	private function initBrick():Void {
-		makeGraphic(_size, _size, _color);
+		//makeGraphic(_size, _size, _color);
+		loadGraphic(AssetPaths.bricksSpriteSheet__png, _size, _size);
+		animation.add(ANIM_IDLE, [_color], 6);
+		animation.add(ANIM_SELECTED, [_color + 5], 6);
+		//setGraphicSize(_size, _size);
+		setSize(_size, _size);
+		updateHitbox();
+		animation.play(ANIM_IDLE);
 	}
 	
 	public function moveBrickTo(X:Float = 0, Y:Float = 0):Void {
@@ -37,6 +48,13 @@ class SimpleBrick extends FlxSprite implements IBrick
 	public function setGroup(id:Int):Void {
 		_group = id;
 		_tempGroup = -1;
+		if (id >= 0) {
+			//set_blend(BlendMode.ADD);
+			animation.play(ANIM_SELECTED);
+		} else {
+			//set_blend(BlendMode.NORMAL);
+			animation.play(ANIM_IDLE);
+		}
 		//makeGraphic(_size, _size, FlxColor.YELLOW);
 	}
 	

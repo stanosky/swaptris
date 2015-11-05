@@ -30,6 +30,7 @@ class Board
 	private var _rows:Int;
 	private var _columns:Int;
 	private var _allRows:Int;
+	private var _minGroupSize:Int = 3;
 	private var _tempStartRowIndex:Int;
 	private var _mainStartRowIndex:Int;
 	private var _factory:IBrickFactory;
@@ -38,8 +39,10 @@ class Board
 	private var _toDestroy:Array<IBrick>;
 	private var _moveAnimNum:Int = 0;
 	private var _removeAnimNum:Int = 0;
+	private var _fallAnimNum:Int = 0;
 	private var _isReady:Bool = false;
 	private var _swapSound:FlxSound;
+	
 	
 	
 	public function new(x:Int,y:Int,columns:Int, rows:Int, brickSize:Int, drawArea:FlxSpriteGroup) {
@@ -86,12 +89,14 @@ class Board
 		var brick:IBrick;
 		for (c in 0..._columns) {
 			for (r in 0..._rows) {
-				removeBrick(c,r + startRowIndex);				
-				brick = _factory.getBrick(c, r);
-				if(brick != null) {
-					brick.moveBrickTo(c * _brickSize,(r + startRowIndex) * _brickSize);
-					_grid.addBrick(brick, c,r + startRowIndex);
-					_drawArea.add(cast(brick, FlxSprite));
+				//removeBrick(c,r + startRowIndex);
+				if (!_grid.isCellOccupied(c, r + startRowIndex)) {
+					brick = _factory.getBrick(c, r);
+					if(brick != null) {
+						brick.moveBrickTo(c * _brickSize,(r + startRowIndex) * _brickSize);
+						_grid.addBrick(brick, c,r + startRowIndex);
+						_drawArea.add(cast(brick, FlxSprite));
+					}
 				}
 			}
 		}
@@ -113,21 +118,25 @@ class Board
 		}		
 	}
 	
-	public function swapBricks(brick1Col:Int, brick1Row:Int, brick2Col:Int, brick2Row:Int) {
+	public function swapBricks(brick1Col:Int, brick1Row:Int, brick2Col:Int, brick2Row:Int):Void {
 		//GameDispatcher.dispatchEvent(new Event(GameEvent.BOARD_BUSY));
 		var cell1Exists:Bool = _grid.cellExists(brick1Col, brick1Row /*+ _mainStartRowIndex*/);
 		var cell2Exists:Bool = _grid.cellExists(brick2Col, brick2Row /*+ _mainStartRowIndex*/);
-		trace("1:", cell1Exists , cell2Exists);
+		//trace("1:", cell1Exists , cell2Exists);
 		if(cell1Exists && cell2Exists) {
 			var cell1Occupied:Bool = _grid.isCellOccupied(brick1Col, brick1Row /*+ _mainStartRowIndex*/);
 			var cell2Occupied:Bool = _grid.isCellOccupied(brick2Col, brick2Row /*+ _mainStartRowIndex*/);
-			trace("2:", cell1Occupied , cell2Occupied);
+			//trace("2:", cell1Occupied , cell2Occupied);
 			if (cell1Occupied && cell2Occupied) {
 				//najpierw pobieramy tylko referencje do kostek ale nie usuwamy z tablicy
 				var brick1:IBrick = _grid.getBrick(brick1Col, brick1Row /*+ _mainStartRowIndex*/);
 				var brick2:IBrick = _grid.getBrick(brick2Col, brick2Row /*+ _mainStartRowIndex*/);
-				trace("3:",brick1.getGroup() , brick2.getGroup());
-				if (brick1.getColor() != brick2.getColor() && brick1.getGroup() == -1 && brick2.getGroup() == -1 ) {
+				var b1Group:Int = brick1.getGroup();
+				var b2Group:Int = brick2.getGroup();
+				//trace("3:",brick1.getGroup() , brick2.getGroup());
+				if (brick1.getColor() != brick2.getColor() && (b1Group != b2Group || (b1Group == -1 && b2Group == -1))) {
+					if (b1Group > -1) ungroupById(b1Group);
+					if (b2Group > -1) ungroupById(b2Group);
 					//dopiero teraz "zdejmujemy" kostki z tablicy i zamieniamy miejscami
 					brick1 = _grid.pickBrick(brick1Col, brick1Row /*+ _mainStartRowIndex*/);
 					brick2 = _grid.pickBrick(brick2Col, brick2Row /*+ _mainStartRowIndex*/);					
@@ -151,7 +160,10 @@ class Board
 	private function onMoveAnimComplete(tween:FlxTween) {
 		if (--_moveAnimNum == 0) {
 			trace("koniec animacji ruchu");
+			//ungroupAll();
 			findBrickGroups();
+			destroyAllGroups();
+			moveBricksDown();
 			//GameDispatcher.dispatchEvent(new Event(GameEvent.BOARD_READY));
 		}
 	}
@@ -177,7 +189,7 @@ class Board
 				}
 			}
 		}
-		trace("created groups:", _groups.length);
+		//trace("created groups:", _groups.length);
 	}
 	
 	private function tryFindGroupForBrick(brick:IBrick):BrickGroup {
@@ -186,6 +198,7 @@ class Board
 		var tmpBrick:IBrick;
 		findNextSameTypeNeighbour(brick, tempGroup);
 		if (tempGroup.length == 4) {
+		//if (tempGroup.length >= _minGroupSize) {
 			var bGroup:BrickGroup = new BrickGroup();
 			for (j in 0...tempGroup.length) {
 				cell = tempGroup[j];
@@ -206,7 +219,7 @@ class Board
 	}
 	
 	private function findNextSameTypeNeighbour(brick:IBrick, output:Array<Cell>):Void {
-		var neighbours:Array<IBrick> = getBrickNeighbours(brick);
+		var neighbours:Array<IBrick> = getBrickNeighbours(brick,true);
 		var currentNeighbour:Int = 0;
 		var nBrick:IBrick;//reprezentuje kostke sąsiada
 		output.push({col:brick.getCol(),row:brick.getRow()});
@@ -245,20 +258,36 @@ class Board
 			var brick:IBrick = _grid.getBrick(col, row);
 			var brickGroup:Int = brick.getGroup();
 			if (brickGroup >= 0) {
-				var groupIndex:Int = findGroupIndexById(brickGroup);
-				if (groupIndex > -1) {
-					var group:BrickGroup = _groups.splice(groupIndex, 1)[0];
-					var cells:Array<Cell> = group.getCells();
-					for (i in 0...cells.length) {
-						destroyBrickInCell(cells[i]);
-					}
-					group.destroy();
-				}
+				destroyGroupById(brickGroup);
+				moveBricksDown();
 			}
 		} else {
 			trace("kostka jest pusta albo nie jest w grupie");
 		}
 	}
+	
+	private function destroyGroupById(groupId:Int):Void {
+		var groupIndex:Int = findGroupIndexById(groupId);
+		if (groupIndex > -1) {
+			var group:BrickGroup = _groups.splice(groupIndex, 1)[0];
+			destroyGroup(group);
+		}
+	}
+	
+	private function destroyGroup(group:BrickGroup):Void {
+		var cells:Array<Cell> = group.getCells();
+		for (i in 0...cells.length) {
+			destroyBrickInCell(cells[i]);
+		}
+		group.destroy();		
+	}
+	
+	private function destroyAllGroups():Void {
+		var len:Int = _groups.length;
+		for (i in 0...len) {
+			destroyGroup(_groups.pop());
+		}
+	}	
 	
 	private function findGroupIndexById(groupId:Int):Int {
 		for (i in 0..._groups.length) {
@@ -276,7 +305,7 @@ class Board
 		}
 	}
 	
-	function onRemoveAnimComplete(tween:FlxTween) {
+	private function onRemoveAnimComplete(tween:FlxTween) {
 		if (--_removeAnimNum == 0) {
 			var brick:IBrick;
 			var col:Int;
@@ -288,5 +317,75 @@ class Board
 			}
 		}
 		trace("_toDestroy.length", _toDestroy.length);
+	}
+	
+	private function moveBricksDown():Void {
+		var shift:Array<Int> = [];
+		var brick:IBrick;
+		var rowIndex:Int;
+		for (c in 0..._columns) {
+			shift.push(0);
+			for (r in 0..._allRows) {
+				rowIndex = _allRows - r - 1;
+				brick = _grid.getBrick(c, rowIndex);
+				if (brick != null) {
+					if (shift[c] > 0) {
+						if (brick.getGroup() >= -1) ungroupById(brick.getGroup());
+						moveBrickDown(c, rowIndex, shift[c]);
+					}
+				} else {
+					shift[c]++;
+				}
+			}
+		}
+	}
+	
+	private function ungroupById(groupId:Int):Void {
+		var groupIndex:Int = findGroupIndexById(groupId);
+		ungroupByIndex(groupIndex);
+	}
+	
+	private function ungroupByIndex(groupIndex:Int):Void {
+		if (groupIndex > -1) {
+			var group:BrickGroup = _groups.splice(groupIndex, 1)[0];
+			var cells:Array<Cell> = group.getCells();
+			var brick:IBrick;
+			for (i in 0...cells.length) {
+				brick =	_grid.getBrick(cells[i].col, cells[i].row);
+				brick.setTempGroup( -1);
+				brick.setGroup( -1);
+			}
+			group.destroy();
+		}			
+	}
+	
+	private function ungroupAll():Void {
+		var len:Int = _groups.length;
+		var current:Int = len;
+		for (i in 0...len) {
+			//trace("group index:", i);
+			ungroupByIndex(--current);
+		}
+	}
+	
+	private function moveBrickDown(col:Int, row:Int, shift:Int):Void {
+		var brick:IBrick = _grid.pickBrick(col, row);
+		_fallAnimNum++;
+		_grid.addBrick(brick, col, row + shift);
+		FlxTween.tween(brick, {y:_y + (row + shift) * _brickSize }, .1 * shift, {ease:FlxEase.quadInOut , complete:onFallAnimComplete} );
+		
+	}
+	
+	private function onFallAnimComplete(tween:FlxTween) {
+		if (--_fallAnimNum == 0) {
+			trace("fall animation end");
+			ungroupAll();
+			findBrickGroups();
+			fillTempGrid();
+			if (_groups.length > 0) {
+				destroyAllGroups();
+				moveBricksDown();
+			}
+		}
 	}
 }
